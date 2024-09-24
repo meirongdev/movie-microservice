@@ -5,7 +5,26 @@ PACKAGES ?= $(shell $(GO) list ./...)
 VETPACKAGES ?= $(shell $(GO) list ./...)
 GOFILES := $(shell find . -name "*.go")
 TESTFOLDER := $(shell $(GO) list ./...)
+PROTO_DIR=api
+PROTO_OUT_DIR=gen
+# Ensure the output directory exists remove ./
+PROTO_FILES_WITH_PATH=$(shell find $(PROTO_DIR) -name "*.proto")
+PROTO_FILES=$(patsubst $(PROTO_DIR)/%,%,$(PROTO_FILES_WITH_PATH))
 
+.PHONY: proto
+# Generate go code from proto files.
+proto:
+	@rm -rf $(PROTO_OUT_DIR)
+	@mkdir -p $(PROTO_OUT_DIR)
+	@hash protoc-gen-go > /dev/null 2>&1; if [ $$? -ne 0 ]; then \
+		go install google.golang.org/protobuf/cmd/protoc-gen-go@latest; \
+	fi
+	@hash protoc-gen-go-grpc > /dev/null 2>&1; if [ $$? -ne 0 ]; then \
+		go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest; \
+	fi
+	@# echo $(PROTO_FILES)
+	@protoc --proto_path=$(PROTO_DIR) --go_out=$(PROTO_OUT_DIR) --go_opt=paths=source_relative \
+		$(PROTO_FILES)
 
 .PHONY: test
 # Run tests to verify code functionality.
@@ -53,6 +72,12 @@ lint:
 tools:
 	@hash golangci-lint > /dev/null 2>&1; if [ $$? -ne 0 ]; then \
 		$(GO) install github.com/golangci/golangci-lint/cmd/golangci-lint@latest; \
+	fi
+	@hash protoc-gen-go > /dev/null 2>&1; if [ $$? -ne 0 ]; then \
+		go install google.golang.org/protobuf/cmd/protoc-gen-go@latest; \
+	fi
+	@hash protoc-gen-go-grpc > /dev/null 2>&1; if [ $$? -ne 0 ]; then \
+		go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest; \
 	fi
 
 .PHONY: help
