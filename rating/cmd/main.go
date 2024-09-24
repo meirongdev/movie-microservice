@@ -13,6 +13,7 @@ import (
 	"github.com/meirongdev/movie-microservice/pkg/discovery/consul"
 	"github.com/meirongdev/movie-microservice/rating/internal/controller/rating"
 	grpchandler "github.com/meirongdev/movie-microservice/rating/internal/handler/grpc"
+	"github.com/meirongdev/movie-microservice/rating/internal/ingester/kafka"
 	"github.com/meirongdev/movie-microservice/rating/internal/repository/memory"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
@@ -44,7 +45,26 @@ func main() {
 	}()
 	defer registry.Deregister(ctx, instanceID, serviceName)
 	repo := memory.New()
-	ctrl := rating.New(repo)
+	ing, err := kafka.NewIngester("localhost:9092", "rating", "ratings")
+	if err != nil {
+		panic(err)
+	}
+	ctrl := rating.New(repo, rating.WithIngester(ing))
+	func() {
+		defer func() {
+			if r := recover(); r != nil {
+				log.Println("recovered from panic: ", r)
+			}
+		}()
+		ingestErr := ctrl.StartIngestion(ctx)
+		if ingestErr != nil {
+			panic(ingestErr)
+		}
+	}()
+	err = ctrl.StartIngestion(ctx)
+	if err != nil {
+		panic(err)
+	}
 	h := grpchandler.New(ctrl)
 	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%v", port))
 	if err != nil {
