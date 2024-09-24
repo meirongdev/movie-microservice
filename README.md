@@ -21,3 +21,23 @@ curl -v "localhost:8083/movie?id=1"
 ```
 
 Movie will call metadata and rating services to get information about the movie.
+
+
+## Grpcurl to test the service
+
+Installation
+```bash
+brew install grpcurl
+```
+
+```bash
+# Server supports reflection
+grpcurl -plaintext  localhost:8083 list
+# MovieService
+# grpc.reflection.v1alpha.ServerReflection
+```
+
+test the movie grpc service
+```bash
+grpcurl -d '{"movie_id": "1"}' -plaintext localhost:8083 MovieService/GetMovieDetails
+```

@@ -1,0 +1,44 @@
+
+ß	
+movie.proto"n
+Metadata
+id (	Rid
+title (	Rtitle 
+description (	Rdescription
+director (	Rdirector"M
+MovieDetails
+rating (Rrating%
+metadata (2	.MetadataRmetadata"/
+GetMetadataRequest
+movie_id (	RmovieId"<
+GetMetadataResponse%
+metadata (2	.MetadataRmetadata";
+PutMetadataRequest%
+metadata (2	.MetadataRmetadata"
+PutMetadataResponse"Z
+GetAggregatedRatingRequest
+	record_id (	RrecordId
+record_type (	R
+recordType"@
+GetAggregatedRatingResponse!
+rating_value (RratingValue"Œ
+PutRatingRequest
+user_id (	RuserId
+	record_id (	RrecordId
+record_type (	R
+recordType!
+rating_value (RratingValue"
+PutRatingResponse"3
+GetMovieDetailsRequest
+movie_id (	RmovieId"M
+GetMovieDetailsResponse2
+movie_details (2.MovieDetailsRmovieDetails2…
+MetadataService8
+GetMetadata.GetMetadataRequest.GetMetadataResponse8
+PutMetadata.PutMetadataRequest.PutMetadataResponse2•
+RatingServiceP
+GetAggregatedRating.GetAggregatedRatingRequest.GetAggregatedRatingResponse2
+	PutRating.PutRatingRequest.PutRatingResponse2T
+MovieServiceD
+GetMovieDetails.GetMovieDetailsRequest.GetMovieDetailsResponseB
+Z/gen;genbproto3
