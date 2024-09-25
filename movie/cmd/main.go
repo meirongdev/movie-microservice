@@ -6,7 +6,11 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
+	"os/signal"
 	"strconv"
+	"sync"
+	"syscall"
 	"time"
 
 	"github.com/grpc-ecosystem/go-grpc-middleware/ratelimit"
@@ -39,7 +43,10 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	ctx := context.Background()
+
+	// app level context
+	ctx, cancel := context.WithCancel(context.Background())
+
 	instanceID := discovery.GenerateInstanceID((serviceName))
 	if err := registry.Register(ctx, instanceID, serviceName, "localhost:"+strconv.Itoa(port)); err != nil {
 		panic(err)
@@ -72,7 +79,21 @@ func main() {
 	)
 	reflection.Register(srv)
 	gen.RegisterMovieServiceServer(srv, h)
+
+	sigChan := make(chan os.Signal, 1)
+	signal.Notify(sigChan, os.Interrupt, syscall.SIGTERM)
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		s := <-sigChan
+		cancel()
+		log.Printf("Received signal %v, attempting graceful shutdown", s)
+		srv.GracefulStop()
+		log.Println("Gracefully stopped the gRPC server")
+	}()
 	if err := srv.Serve(lis); err != nil {
 		panic(err)
 	}
+	wg.Wait()
 }
