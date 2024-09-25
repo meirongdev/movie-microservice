@@ -9,12 +9,13 @@ import (
 	"time"
 
 	"github.com/meirongdev/movie-microservice/gen"
+	"github.com/meirongdev/movie-microservice/pkg/config"
 	"github.com/meirongdev/movie-microservice/pkg/discovery"
 	"github.com/meirongdev/movie-microservice/pkg/discovery/consul"
 	"github.com/meirongdev/movie-microservice/rating/internal/controller/rating"
 	grpchandler "github.com/meirongdev/movie-microservice/rating/internal/handler/grpc"
 	"github.com/meirongdev/movie-microservice/rating/internal/ingester/kafka"
-	"github.com/meirongdev/movie-microservice/rating/internal/repository/memory"
+	"github.com/meirongdev/movie-microservice/rating/internal/repository/mysql"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -44,7 +45,18 @@ func main() {
 		}
 	}()
 	defer registry.Deregister(ctx, instanceID, serviceName)
-	repo := memory.New()
+
+	mysqlConfig := config.MySQLConfig{
+		Host:     "localhost:3306",
+		Username: "test",
+		Password: "test",
+		Database: "moviedb",
+	}
+	dsn := mysqlConfig.FormatDSN()
+	repo, err := mysql.New(dsn)
+	if err != nil {
+		panic(err)
+	}
 	ing, err := kafka.NewIngester("localhost:9092", "rating", "ratings")
 	if err != nil {
 		panic(err)

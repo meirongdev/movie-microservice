@@ -11,7 +11,8 @@ import (
 	"github.com/meirongdev/movie-microservice/gen"
 	"github.com/meirongdev/movie-microservice/metadata/internal/controller/metadata"
 	grpchandler "github.com/meirongdev/movie-microservice/metadata/internal/handler/grpc"
-	"github.com/meirongdev/movie-microservice/metadata/internal/repository/memory"
+	"github.com/meirongdev/movie-microservice/metadata/internal/repository/mysql"
+	"github.com/meirongdev/movie-microservice/pkg/config"
 	"github.com/meirongdev/movie-microservice/pkg/discovery"
 	"github.com/meirongdev/movie-microservice/pkg/discovery/consul"
 	"google.golang.org/grpc"
@@ -43,7 +44,17 @@ func main() {
 		}
 	}()
 	defer registry.Deregister(ctx, instanceID, serviceName)
-	repo := memory.New()
+	mysqlConfig := config.MySQLConfig{
+		Host:     "localhost:3306",
+		Username: "test",
+		Password: "test",
+		Database: "moviedb",
+	}
+	dsn := mysqlConfig.FormatDSN()
+	repo, err := mysql.New(dsn)
+	if err != nil {
+		panic(err)
+	}
 	ctrl := metadata.New(repo)
 	h := grpchandler.New(ctrl)
 	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%v", port))

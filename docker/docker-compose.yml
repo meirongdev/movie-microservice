@@ -37,7 +37,19 @@ services:
     command: "agent"
     networks:
       - network-movie-microservices
-
+  mysql:
+    image: mysql/mysql-server
+    environment:
+      MYSQL_ROOT_PASSWORD: test
+      MYSQL_USER: test
+      MYSQL_PASSWORD: test
+      MYSQL_DATABASE: moviedb
+    ports:
+    - "3306:3306"
+    networks:
+      - network-movie-microservices
+    volumes:
+      - ./db_init:/docker-entrypoint-initdb.d
 
 networks:
   network-movie-microservices:

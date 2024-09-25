@@ -4,6 +4,7 @@ go 1.23.1
 
 require (
 	github.com/confluentinc/confluent-kafka-go/v2 v2.5.3
+	github.com/go-sql-driver/mysql v1.8.1
 	github.com/hashicorp/consul/api v1.29.4
 	golang.org/x/exp v0.0.0-20240112132812-db7319d0e0e3
 	google.golang.org/grpc v1.62.1
@@ -11,6 +12,7 @@ require (
 )
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/armon/go-metrics v0.4.1 // indirect
 	github.com/fatih/color v1.16.0 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
