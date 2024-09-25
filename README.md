@@ -41,3 +41,13 @@ test the movie grpc service
 ```bash
 grpcurl -d '{"movie_id": "1"}' -plaintext localhost:8083 MovieService/GetMovieDetails
 ```
+
+## Run with config file locally
+    
+```bash
+make compose/up
+go run metadata/cmd/main.go -config metadata/config/config.yaml
+go run rating/cmd/main.go -config rating/config/config.yaml
+go run movie/cmd/main.go -config movie/config/config.yaml
+grpcurl -d '{"movie_id": "1"}' -plaintext localhost:8083 MovieService/GetMovieDetails
+```

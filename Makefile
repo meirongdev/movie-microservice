@@ -10,6 +10,7 @@ PROTO_OUT_DIR=gen
 # Ensure the output directory exists remove ./
 PROTO_FILES_WITH_PATH=$(shell find $(PROTO_DIR) -name "*.proto")
 PROTO_FILES=$(patsubst $(PROTO_DIR)/%,%,$(PROTO_FILES_WITH_PATH))
+# TODO: run, build, install, clean, etc.
 
 .PHONY: proto
 # Generate go code from proto files.
@@ -81,6 +82,15 @@ tools:
 	@hash protoc-gen-go-grpc > /dev/null 2>&1; if [ $$? -ne 0 ]; then \
 		go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest; \
 	fi
+
+.PHONY: compose-up
+# Start the docker-compose services.
+compose/up:
+	@cd docker && docker compose up -d
+.PHONY: compose-down
+# Stop the docker-compose services.
+compose/down:
+	@cd docker && docker compose down
 
 .PHONY: help
 # Help.
