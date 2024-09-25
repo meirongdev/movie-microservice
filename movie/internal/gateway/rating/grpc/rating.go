@@ -6,6 +6,7 @@ import (
 	"github.com/meirongdev/movie-microservice/gen"
 	"github.com/meirongdev/movie-microservice/internal/grpcutil"
 	"github.com/meirongdev/movie-microservice/pkg/discovery"
+	"github.com/meirongdev/movie-microservice/pkg/retry"
 	"github.com/meirongdev/movie-microservice/rating/pkg/model"
 )
 
@@ -27,9 +28,11 @@ func (g *Gateway) GetAggregatedRating(ctx context.Context, recordID model.Record
 	}
 	defer conn.Close()
 	client := gen.NewRatingServiceClient(conn)
-	resp, err := client.GetAggregatedRating(ctx, &gen.GetAggregatedRatingRequest{RecordId: string(recordID), RecordType: string(recordType)})
-	if err != nil {
-		return 0, err
-	}
-	return resp.RatingValue, nil
+	var resp *gen.GetAggregatedRatingResponse
+	var grpcErr error
+	err = retry.GrpcCall(func() error {
+		resp, grpcErr = client.GetAggregatedRating(ctx, &gen.GetAggregatedRatingRequest{RecordId: string(recordID), RecordType: string(recordType)})
+		return grpcErr
+	})
+	return resp.RatingValue, err
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/meirongdev/movie-microservice/internal/grpcutil"
 	"github.com/meirongdev/movie-microservice/metadata/pkg/model"
 	"github.com/meirongdev/movie-microservice/pkg/discovery"
+	"github.com/meirongdev/movie-microservice/pkg/retry"
 )
 
 // Gateway defines a movie metadata gRPC gateway.
@@ -27,9 +28,13 @@ func (g *Gateway) Get(ctx context.Context, id string) (*model.Metadata, error) {
 	}
 	defer conn.Close()
 	client := gen.NewMetadataServiceClient(conn)
-	resp, err := client.GetMetadata(ctx, &gen.GetMetadataRequest{MovieId: id})
-	if err != nil {
-		return nil, err
-	}
-	return model.MetadataFromProto(resp.Metadata), nil
+
+	var resp *gen.GetMetadataResponse
+	var grpcErr error
+	err = retry.GrpcCall(func() error {
+		resp, grpcErr = client.GetMetadata(ctx,
+			&gen.GetMetadataRequest{MovieId: id})
+		return grpcErr
+	})
+	return model.MetadataFromProto(resp.Metadata), err
 }
