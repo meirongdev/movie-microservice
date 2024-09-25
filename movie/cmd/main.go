@@ -23,10 +23,16 @@ import (
 const serviceName = "movie"
 
 func main() {
-	var port int
-	flag.IntVar(&port, "port", 8083, "the port to listen on")
+	var configPath string
+	flag.StringVar(&configPath, "config", "config.yml", "path to the config file")
 	flag.Parse()
-	log.Printf("Starting the movie service on port %d", port)
+	config, err := loadConfig(configPath)
+	if err != nil {
+		panic(err)
+	}
+	port := config.API.Port
+
+	// Register with Consul start
 	registry, err := consul.NewRegistry("localhost:8500")
 	if err != nil {
 		panic(err)
@@ -46,6 +52,7 @@ func main() {
 		}
 	}()
 	defer registry.Deregister(ctx, instanceID, serviceName)
+	// Register with Consul end
 
 	metadataGateway := metadatagateway.New(registry)
 	ratingGateway := ratinggateway.New(registry)

@@ -12,7 +12,7 @@ import (
 	"github.com/meirongdev/movie-microservice/metadata/internal/controller/metadata"
 	grpchandler "github.com/meirongdev/movie-microservice/metadata/internal/handler/grpc"
 	"github.com/meirongdev/movie-microservice/metadata/internal/repository/mysql"
-	"github.com/meirongdev/movie-microservice/pkg/config"
+
 	"github.com/meirongdev/movie-microservice/pkg/discovery"
 	"github.com/meirongdev/movie-microservice/pkg/discovery/consul"
 	"google.golang.org/grpc"
@@ -22,10 +22,16 @@ import (
 const serviceName = "metadata"
 
 func main() {
-	var port int
-	flag.IntVar(&port, "port", 8081, "API handler port")
+	var configPath string
+	flag.StringVar(&configPath, "config", "config.yml", "path to the config file")
 	flag.Parse()
+	config, err := loadConfig(configPath)
+	if err != nil {
+		panic(err)
+	}
+	port := config.API.Port
 	log.Printf("Starting the metadata service on port %d", port)
+	// Register the service in Consul start
 	registry, err := consul.NewRegistry("localhost:8500")
 	if err != nil {
 		panic(err)
@@ -44,12 +50,8 @@ func main() {
 		}
 	}()
 	defer registry.Deregister(ctx, instanceID, serviceName)
-	mysqlConfig := config.MySQLConfig{
-		Host:     "localhost:3306",
-		Username: "test",
-		Password: "test",
-		Database: "moviedb",
-	}
+	// Register the service in Consul end
+	mysqlConfig := config.API.MysqlConfig
 	dsn := mysqlConfig.FormatDSN()
 	repo, err := mysql.New(dsn)
 	if err != nil {

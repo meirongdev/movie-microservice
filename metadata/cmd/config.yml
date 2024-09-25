@@ -1,0 +1,7 @@
+api:
+  port: 8081
+  mysql:
+    host: 127.0.0.1:3306
+    username: test
+    password: test
+    database: moviedb

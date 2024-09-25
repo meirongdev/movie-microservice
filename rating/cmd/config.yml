@@ -1,0 +1,11 @@
+api:
+  port: 8082
+  mysql:
+    host: 127.0.0.1:3306
+    username: test
+    password: test
+    database: moviedb
+  kafka:
+    address: 127.0.0.1:9092
+    group_id: moviedb
+    topic: rating

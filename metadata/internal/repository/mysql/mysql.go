@@ -20,6 +20,10 @@ func New(dsn string) (*Repository, error) {
 	if err != nil {
 		return nil, err
 	}
+	err = db.Ping()
+	if err != nil {
+		return nil, err
+	}
 	return &Repository{db}, nil
 }
 

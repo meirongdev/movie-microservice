@@ -9,7 +9,6 @@ import (
 	"time"
 
 	"github.com/meirongdev/movie-microservice/gen"
-	"github.com/meirongdev/movie-microservice/pkg/config"
 	"github.com/meirongdev/movie-microservice/pkg/discovery"
 	"github.com/meirongdev/movie-microservice/pkg/discovery/consul"
 	"github.com/meirongdev/movie-microservice/rating/internal/controller/rating"
@@ -23,9 +22,14 @@ import (
 const serviceName = "rating"
 
 func main() {
-	var port int
-	flag.IntVar(&port, "port", 8082, "API handler port")
+	var configPath string
+	flag.StringVar(&configPath, "config", "config.yml", "path to the config file")
 	flag.Parse()
+	config, err := locaConfig(configPath)
+	if err != nil {
+		panic(err)
+	}
+	port := config.API.Port
 	log.Printf("Starting the rating service on port %d", port)
 	registry, err := consul.NewRegistry("localhost:8500")
 	if err != nil {
@@ -46,23 +50,19 @@ func main() {
 	}()
 	defer registry.Deregister(ctx, instanceID, serviceName)
 
-	mysqlConfig := config.MySQLConfig{
-		Host:     "localhost:3306",
-		Username: "test",
-		Password: "test",
-		Database: "moviedb",
-	}
+	mysqlConfig := config.API.MysqlConfig
 	dsn := mysqlConfig.FormatDSN()
 	repo, err := mysql.New(dsn)
 	if err != nil {
 		panic(err)
 	}
-	ing, err := kafka.NewIngester("localhost:9092", "rating", "ratings")
+	kafkaConfig := config.API.KafkaConfig
+	ing, err := kafka.NewIngester(kafkaConfig.Address, kafkaConfig.GroupID, kafkaConfig.Topic)
 	if err != nil {
 		panic(err)
 	}
 	ctrl := rating.New(repo, rating.WithIngester(ing))
-	func() {
+	go func() {
 		defer func() {
 			if r := recover(); r != nil {
 				log.Println("recovered from panic: ", r)
@@ -73,10 +73,6 @@ func main() {
 			panic(ingestErr)
 		}
 	}()
-	err = ctrl.StartIngestion(ctx)
-	if err != nil {
-		panic(err)
-	}
 	h := grpchandler.New(ctrl)
 	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%v", port))
 	if err != nil {

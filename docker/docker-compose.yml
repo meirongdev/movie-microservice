@@ -18,7 +18,7 @@ services:
       KAFKA_LISTENERS: INSIDE://0.0.0.0:9093,OUTSIDE://0.0.0.0:9092
       KAFKA_INTER_BROKER_LISTENER_NAME: INSIDE
       KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_CREATE_TOPICS: "ratings:1:1"
+      KAFKA_CREATE_TOPICS: "rating:1:1"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
     depends_on:
@@ -34,7 +34,7 @@ services:
       - "8500:8500"
       - "8600:8600/tcp"
       - "8600:8600/udp"
-    command: "agent"
+    command: "agent -server -ui -node=server-1 -bootstrap-expect=1 -client=0.0.0.0"
     networks:
       - network-movie-microservices
   mysql:
