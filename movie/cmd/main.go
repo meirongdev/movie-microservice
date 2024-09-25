@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/grpc-ecosystem/go-grpc-middleware/ratelimit"
 	"github.com/meirongdev/movie-microservice/gen"
 	"github.com/meirongdev/movie-microservice/movie/internal/controller/movie"
 	metadatagateway "github.com/meirongdev/movie-microservice/movie/internal/gateway/metadata/grpc"
@@ -16,6 +17,7 @@ import (
 	grpchandler "github.com/meirongdev/movie-microservice/movie/internal/handler/grpc"
 	"github.com/meirongdev/movie-microservice/pkg/discovery"
 	"github.com/meirongdev/movie-microservice/pkg/discovery/consul"
+	"github.com/meirongdev/movie-microservice/pkg/limiter"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -62,7 +64,12 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	srv := grpc.NewServer()
+	const limit = 100
+	const burst = 100
+	l := limiter.New(limit, burst)
+	srv := grpc.NewServer(
+		grpc.UnaryInterceptor(ratelimit.UnaryServerInterceptor(l)),
+	)
 	reflection.Register(srv)
 	gen.RegisterMovieServiceServer(srv, h)
 	if err := srv.Serve(lis); err != nil {
