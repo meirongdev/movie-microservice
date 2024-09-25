@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"log"
+	"time"
 
 	"github.com/confluentinc/confluent-kafka-go/v2/kafka"
 	"github.com/meirongdev/movie-microservice/rating/pkg/model"
@@ -45,7 +46,7 @@ func (i *Ingester) Ingest(ctx context.Context) (chan model.RatingEvent, error) {
 				return
 			default:
 			}
-			msg, err := i.consumer.ReadMessage(-1)
+			msg, err := i.consumer.ReadMessage(5 * time.Second)
 			if err != nil {
 				log.Println("ReadMessage error: " + err.Error())
 				continue
