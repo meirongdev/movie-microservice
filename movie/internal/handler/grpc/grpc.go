@@ -29,9 +29,9 @@ func (h *Handler) GetMovieDetails(ctx context.Context, req *gen.GetMovieDetailsR
 	}
 	m, err := h.ctrl.Get(ctx, req.MovieId)
 	if err != nil && errors.Is(err, movie.ErrNotFound) {
-		return nil, status.Errorf(codes.NotFound, err.Error())
+		return nil, status.Errorf(codes.NotFound, "Resource not found: %v", err.Error())
 	} else if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "Failed to get movie details: %v", err.Error())
 	}
 	return &gen.GetMovieDetailsResponse{
 		MovieDetails: &gen.MovieDetails{

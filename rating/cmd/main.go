@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
 	"log/slog"
 	"net"
 	"os"
@@ -30,7 +29,12 @@ const serviceName = "rating"
 
 func main() {
 	zapL := zap.Must(zap.NewProduction())
-	defer zapL.Sync()
+	defer func() {
+		err := zapL.Sync()
+		if err != nil {
+			slog.Info("Failed to sync logger", slog.Any("error", err))
+		}
+	}()
 
 	logger := slog.New(zapslog.NewHandler(zapL.Core(), nil))
 
@@ -42,7 +46,7 @@ func main() {
 		panic(err)
 	}
 	port := config.API.Port
-	log.Printf("Starting the rating service on port %d", port)
+	logger.Info("Starting the rating service", slog.Int("port", port))
 	registry, err := consul.NewRegistry("localhost:8500")
 	if err != nil {
 		panic(err)
@@ -62,7 +66,9 @@ func main() {
 			time.Sleep(1 * time.Second)
 		}
 	}()
-	defer registry.Deregister(ctx, instanceID, serviceName)
+	defer func() {
+		_ = registry.Deregister(ctx, instanceID, serviceName)
+	}()
 
 	mysqlConfig := config.API.MysqlConfig
 	dsn := mysqlConfig.FormatDSN()

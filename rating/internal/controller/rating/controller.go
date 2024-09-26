@@ -31,11 +31,12 @@ type config struct {
 	ingester ratingIngester
 }
 
-type Option func(*config)
+type Option func(*config) error
 
 func WithIngester(ingester ratingIngester) Option {
-	return func(c *config) {
+	return func(c *config) error {
 		c.ingester = ingester
+		return nil
 	}
 }
 
@@ -43,7 +44,10 @@ func WithIngester(ingester ratingIngester) Option {
 func New(repo ratingRepository, options ...Option) *Controller {
 	c := &Controller{repo, config{}}
 	for _, o := range options {
-		o(&c.config)
+		e := o(&c.config)
+		if e != nil {
+			log.Fatalf("failed to apply option: %v", e)
+		}
 	}
 	return c
 }
@@ -51,7 +55,7 @@ func New(repo ratingRepository, options ...Option) *Controller {
 // GetAggregatedRating returns the aggregated rating for a record or ErrNotFound if there are no ratings for it.
 func (c *Controller) GetAggregatedRating(ctx context.Context, recordID model.RecordID, recordType model.RecordType) (float64, error) {
 	ratings, err := c.repo.Get(ctx, recordID, recordType)
-	if err != nil && err == repository.ErrNotFound {
+	if err != nil && errors.Is(err, repository.ErrNotFound) {
 		return 0, ErrNotFound
 	} else if err != nil {
 		return 0, err
@@ -69,14 +73,14 @@ func (c *Controller) PutRating(ctx context.Context, recordID model.RecordID, rec
 }
 
 // StartIngestion starts the ingestion of rating events.
-func (s *Controller) StartIngestion(ctx context.Context) error {
-	ch, err := s.ingester.Ingest(ctx)
+func (c *Controller) StartIngestion(ctx context.Context) error {
+	ch, err := c.ingester.Ingest(ctx)
 	if err != nil {
 		return err
 	}
 	log.Println("Started ingestion")
 	for e := range ch {
-		if err := s.PutRating(ctx, e.RecordID, e.RecordType, &model.Rating{UserID: e.UserID, Value: e.Value}); err != nil {
+		if err := c.PutRating(ctx, e.RecordID, e.RecordType, &model.Rating{UserID: e.UserID, Value: e.Value}); err != nil {
 			return err
 		}
 	}

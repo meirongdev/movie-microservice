@@ -32,7 +32,12 @@ const serviceName = "movie"
 
 func main() {
 	zapL := zap.Must(zap.NewProduction())
-	defer zapL.Sync()
+	defer func() {
+		err := zapL.Sync()
+		if err != nil {
+			slog.Info("Failed to sync logger", slog.Any("error", err))
+		}
+	}()
 
 	logger := slog.New(zapslog.NewHandler(zapL.Core(), nil))
 
@@ -67,7 +72,9 @@ func main() {
 			time.Sleep(2 * time.Second)
 		}
 	}()
-	defer registry.Deregister(ctx, instanceID, serviceName)
+	defer func() {
+		_ = registry.Deregister(ctx, instanceID, serviceName)
+	}()
 	// Register with Consul end
 
 	metadataGateway := metadatagateway.New(registry)

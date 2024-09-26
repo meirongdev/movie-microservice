@@ -27,7 +27,7 @@ func NewRegistry() *Registry {
 }
 
 // Register creates a service record in the registry.
-func (r *Registry) Register(ctx context.Context, instanceID string, serviceName string, hostPort string) error {
+func (r *Registry) Register(_ context.Context, instanceID string, serviceName string, hostPort string) error {
 	r.Lock()
 	defer r.Unlock()
 	if _, ok := r.serviceAddrs[serviceName]; !ok {
@@ -38,7 +38,7 @@ func (r *Registry) Register(ctx context.Context, instanceID string, serviceName 
 }
 
 // Deregister removes a service record from the registry.
-func (r *Registry) Deregister(ctx context.Context, instanceID string, serviceName string) error {
+func (r *Registry) Deregister(_ context.Context, instanceID string, serviceName string) error {
 	r.Lock()
 	defer r.Unlock()
 	if _, ok := r.serviceAddrs[serviceName]; !ok {
@@ -63,7 +63,7 @@ func (r *Registry) ReportHealthyState(instanceID string, serviceName string) err
 }
 
 // ServiceAddresses returns the list of addresses of active instances of the given service.
-func (r *Registry) ServiceAddresses(ctx context.Context, serviceName string) ([]string, error) {
+func (r *Registry) ServiceAddresses(_ context.Context, serviceName string) ([]string, error) {
 	r.RLock()
 	defer r.RUnlock()
 	if len(r.serviceAddrs[serviceName]) == 0 {

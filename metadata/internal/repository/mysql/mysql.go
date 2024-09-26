@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	// Importing MySQL driver for side effects (registers the driver).
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/meirongdev/movie-microservice/metadata/internal/repository"
 	"github.com/meirongdev/movie-microservice/metadata/pkg/model"

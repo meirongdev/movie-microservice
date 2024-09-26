@@ -29,9 +29,9 @@ func (h *Handler) GetMetadata(ctx context.Context, req *gen.GetMetadataRequest) 
 	}
 	m, err := h.ctrl.Get(ctx, req.MovieId)
 	if err != nil && errors.Is(err, metadata.ErrNotFound) {
-		return nil, status.Errorf(codes.NotFound, err.Error())
+		return nil, status.Errorf(codes.NotFound, "Resource not found: %v", err.Error())
 	} else if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "Failed to get metadata: %v", err.Error())
 	}
 	return &gen.GetMetadataResponse{Metadata: model.MetadataToProto(m)}, nil
 }

@@ -29,9 +29,9 @@ func (h *Handler) GetAggregatedRating(ctx context.Context, req *gen.GetAggregate
 	}
 	v, err := h.ctrl.GetAggregatedRating(ctx, model.RecordID(req.RecordId), model.RecordType(req.RecordType))
 	if err != nil && errors.Is(err, rating.ErrNotFound) {
-		return nil, status.Errorf(codes.NotFound, err.Error())
+		return nil, status.Errorf(codes.NotFound, "Resource not found: %v", err.Error())
 	} else if err != nil {
-		return nil, status.Errorf(codes.Internal, err.Error())
+		return nil, status.Errorf(codes.Internal, "Failed to get rating: %v", err.Error())
 	}
 	return &gen.GetAggregatedRatingResponse{RatingValue: v}, nil
 }
