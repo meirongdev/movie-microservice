@@ -4,7 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
+	"log/slog"
 	"net"
 	"os"
 	"os/signal"
@@ -22,6 +22,8 @@ import (
 	"github.com/meirongdev/movie-microservice/pkg/discovery"
 	"github.com/meirongdev/movie-microservice/pkg/discovery/consul"
 	"github.com/meirongdev/movie-microservice/pkg/limiter"
+	"go.uber.org/zap"
+	"go.uber.org/zap/exp/zapslog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -29,6 +31,11 @@ import (
 const serviceName = "movie"
 
 func main() {
+	zapL := zap.Must(zap.NewProduction())
+	defer zapL.Sync()
+
+	logger := slog.New(zapslog.NewHandler(zapL.Core(), nil))
+
 	var configPath string
 	flag.StringVar(&configPath, "config", "config.yml", "path to the config file")
 	flag.Parse()
@@ -55,7 +62,7 @@ func main() {
 	go func() {
 		for {
 			if err := registry.ReportHealthyState(instanceID, serviceName); err != nil {
-				log.Println("failed to report healthy state:", err)
+				logger.Error("failed to report healthy state", slog.Any("error", err))
 			}
 			time.Sleep(2 * time.Second)
 		}
@@ -69,11 +76,11 @@ func main() {
 	h := grpchandler.New(ctrl)
 	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", port))
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		logger.Error("failed to listen", slog.Any("error", err))
+		os.Exit(1)
 	}
-	const limit = 100
-	const burst = 100
-	l := limiter.New(limit, burst)
+
+	l := limiter.New(10, 5)
 	srv := grpc.NewServer(
 		grpc.UnaryInterceptor(ratelimit.UnaryServerInterceptor(l)),
 	)
@@ -88,9 +95,9 @@ func main() {
 		defer wg.Done()
 		s := <-sigChan
 		cancel()
-		log.Printf("Received signal %v, attempting graceful shutdown", s)
+		logger.Info("received signal, attempting graceful shutdown", slog.Any("signal", s))
 		srv.GracefulStop()
-		log.Println("Gracefully stopped the gRPC server")
+		logger.Info("gracefully stopped the gRPC server")
 	}()
 	if err := srv.Serve(lis); err != nil {
 		panic(err)

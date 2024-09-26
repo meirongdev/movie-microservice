@@ -8,6 +8,8 @@ require (
 	github.com/go-sql-driver/mysql v1.8.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/hashicorp/consul/api v1.29.4
+	go.uber.org/zap v1.27.0
+	go.uber.org/zap/exp v0.2.0
 	golang.org/x/exp v0.0.0-20240112132812-db7319d0e0e3
 	golang.org/x/time v0.6.0
 	google.golang.org/grpc v1.67.0
@@ -31,6 +33,7 @@ require (
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
+	go.uber.org/multierr v1.10.0 // indirect
 	golang.org/x/net v0.29.0 // indirect
 	golang.org/x/sys v0.25.0 // indirect
 	golang.org/x/text v0.18.0 // indirect

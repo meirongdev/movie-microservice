@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"log/slog"
 	"net"
 	"os"
 	"os/signal"
@@ -19,6 +20,8 @@ import (
 	grpchandler "github.com/meirongdev/movie-microservice/rating/internal/handler/grpc"
 	"github.com/meirongdev/movie-microservice/rating/internal/ingester/kafka"
 	"github.com/meirongdev/movie-microservice/rating/internal/repository/mysql"
+	"go.uber.org/zap"
+	"go.uber.org/zap/exp/zapslog"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -26,6 +29,11 @@ import (
 const serviceName = "rating"
 
 func main() {
+	zapL := zap.Must(zap.NewProduction())
+	defer zapL.Sync()
+
+	logger := slog.New(zapslog.NewHandler(zapL.Core(), nil))
+
 	var configPath string
 	flag.StringVar(&configPath, "config", "config.yml", "path to the config file")
 	flag.Parse()
@@ -49,7 +57,7 @@ func main() {
 	go func() {
 		for {
 			if err := registry.ReportHealthyState(instanceID, serviceName); err != nil {
-				log.Println("Failed to report healthy state: " + err.Error())
+				logger.Error("Failed to report healthy state", slog.Any("error", err))
 			}
 			time.Sleep(1 * time.Second)
 		}
@@ -71,7 +79,7 @@ func main() {
 	go func() {
 		defer func() {
 			if r := recover(); r != nil {
-				log.Println("recovered from panic: ", r)
+				logger.Error("recovered from panic", slog.Any("error", r))
 			}
 		}()
 		ingestErr := ctrl.StartIngestion(ctx)
@@ -82,7 +90,8 @@ func main() {
 	h := grpchandler.New(ctrl)
 	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%v", port))
 	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
+		logger.Error("Failed to listen", slog.Any("error", err))
+		os.Exit(1)
 	}
 	srv := grpc.NewServer()
 	reflection.Register(srv)
@@ -96,9 +105,9 @@ func main() {
 		defer wg.Done()
 		s := <-sigChan
 		cancel()
-		log.Printf("Received signal %v, attempting graceful shutdown", s)
+		logger.Info("Received signal, attempting graceful shutdown", slog.Any("signal", s))
 		srv.GracefulStop()
-		log.Println("Gracefully stopped the gRPC server")
+		logger.Info("Gracefully stopped the gRPC server")
 
 		// TODO DB cleanup
 		// TODO Kafka cleanup

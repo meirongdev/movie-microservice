@@ -36,5 +36,8 @@ func (g *Gateway) Get(ctx context.Context, id string) (*model.Metadata, error) {
 			&gen.GetMetadataRequest{MovieId: id})
 		return grpcErr
 	})
+	if err != nil {
+		return nil, err
+	}
 	return model.MetadataFromProto(resp.Metadata), err
 }
